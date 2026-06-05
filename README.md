@@ -8,6 +8,9 @@
 
 Demostrar cómo un dispositivo puede intentar convertirse en el **Root Bridge** de una red que utiliza STP, con el fin de observar los cambios que se producen en la topología y comprender el impacto que esto puede tener en el funcionamiento de las comunicaciones.
 
+### Topología de Red
+![Topología de Red](https://i.postimg.cc/5N4fcsyj/stp-1.png)
+
 ---
 
 ## 🎯 Objetivo del Script
@@ -78,31 +81,16 @@ sudo python3 stp_claim_root.py
 
 ## 📸 Capturas de Pantalla
 
-### Topología de Red
-![Topología de Red](images/image2.png)
-
-### Configuración de la red
-![Configuración de la red](images/image3.png)
-
 ### "show spanning-tree" antes del ataque
-![STP antes del ataque](images/image4.png)
+![STP antes del ataque](https://i.postimg.cc/FKQPqBFq/STP-CAP-1.png)
 
 ### Ataque corriendo
-![Ataque corriendo](images/image5.png)
+![Ataque corriendo](https://i.postimg.cc/sDkKQNWX/STP-CAP-2.png)
 
-### BPDUs modificadas siendo enviadas
-![BPDUs enviadas](images/image6.png)
+![Ataque corriendo 2](https://i.postimg.cc/DzFg54Bz/STP-CAP-2-2.png)
 
 ### "show spanning-tree" después del ataque
-![STP después del ataque](images/image7.png)
-
-### Cambio de Root Bridge confirmado
-![Root Bridge cambiado](images/image8.png)
-
-### Evidencia adicional
-![Evidencia adicional 1](images/image10.png)
-
-![Evidencia adicional 2](images/image11.png)
+![STP después del ataque](https://i.postimg.cc/fLqfw2ZC/STP-CAP-3.png)
 
 ---
 
@@ -127,12 +115,16 @@ Función aplicada en los puertos de acceso (donde se conectan dispositivos final
 SW(config-if)# spanning-tree bpduguard enable
 ```
 
+![BPDU Guard resultado](https://i.postimg.cc/G3B54Yf7/STP-M-1.png)
+
 ### 2. STP Port Security (Prioridad manual del Root Bridge)
 Asignar manualmente la **prioridad más baja posible** al switch legítimo, garantizando que ningún otro dispositivo pueda ganar la elección STP.
 
 ```
 SW(config)# spanning-tree vlan 1 priority 0
 ```
+
+![STP Port Security resultado](https://i.postimg.cc/cLcDpcK4/STP-M-2.png)
 
 ### 3. Root Guard
 Se aplica en puertos donde no se desea que aparezca un Root Bridge. Si recibe una BPDU superior, el puerto pasa a estado **root-inconsistent** y deja de reenviar tráfico, protegiendo al Root Bridge legítimo.
@@ -141,6 +133,8 @@ Se aplica en puertos donde no se desea que aparezca un Root Bridge. Si recibe un
 SW(config-if)# spanning-tree guard root
 ```
 
+![Root Guard resultado](https://i.postimg.cc/B6RNTYzg/STP-M-3.png)
+
 ### 4. BPDU Filtering
 Bloquea el envío y recepción de BPDUs en puertos específicos, evitando que dispositivos no autorizados participen en la negociación STP.
 
@@ -148,7 +142,9 @@ Bloquea el envío y recepción de BPDUs en puertos específicos, evitando que di
 SW(config-if)# spanning-tree bpdufilter enable
 ```
 
+![BPDU Filtering resultado](https://i.postimg.cc/8krZpGJS/STP-M-4.png)
+
 ---
 
-> ⚠️ **Este script es únicamente con fines educativos y de investigación en entornos controlados.**
+> ⚠️ **Este script es únicamente con fines educativos y de investigación en entornos controlados.**  
 > ⚠️ **BY: Elianny**
