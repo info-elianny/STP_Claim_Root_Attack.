@@ -1,6 +1,6 @@
 # 🛡️ Ataque STP Claim Root
 
-📹 [Video demostración](https://youtu.be/1ulKlf1zeLc) | 📂 [Repositorio](https://github.com/info-elianny/STP_Claim_Root_Attack)
+📹 [Video demostración](https://youtu.be/1ulKlf1zeLc) 
 
 ---
 
